@@ -151,3 +151,4 @@ class InsightController extends Controller
 }
 
 
+

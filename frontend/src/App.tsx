@@ -7,6 +7,7 @@ import ProtectedRoute from '@/components/layout/ProtectedRoute'
 // Pages
 import Login from '@/pages/Login'
 import Register from '@/pages/Register'
+import Onboarding from '@/pages/Onboarding'
 import Dashboard from '@/pages/Dashboard'
 import Inbox from '@/pages/Inbox'
 import Posts from '@/pages/Posts'
@@ -35,6 +36,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           
           <Route element={<ProtectedRoute />}>
+            <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/inbox" element={<Inbox />} />
             <Route path="/posts" element={<Posts />} />

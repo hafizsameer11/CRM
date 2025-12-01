@@ -63,3 +63,4 @@ class Insight extends Model
 }
 
 
+

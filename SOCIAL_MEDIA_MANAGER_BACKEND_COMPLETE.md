@@ -467,3 +467,4 @@ curl -X POST http://localhost:8000/api/tenant/ai/generate-caption \
 *Built with ❤️ using Laravel 11, Queue Jobs, Meta Graph API, and OpenAI*
 
 
+

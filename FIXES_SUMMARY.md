@@ -195,3 +195,4 @@ There was no way to manage subscription plans (Starter, Growth, Pro) in the admi
 Both problems are now resolved and ready for testing!
 
 
+

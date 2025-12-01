@@ -152,3 +152,4 @@ class FetchChannelInsights implements ShouldQueue
 }
 
 
+
