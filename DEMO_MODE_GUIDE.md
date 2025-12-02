@@ -117,3 +117,4 @@ const { data: stats } = useQuery({
 - All demo data is static (no mutations)
 - Real API calls are disabled when demo mode is active
 
+
