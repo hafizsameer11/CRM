@@ -13,36 +13,78 @@ class MetaOAuthService
 
     public function __construct()
     {
-        $this->appId = Setting::getSystem('META_APP_ID')['value'] ?? config('services.meta.app_id');
-        $this->appSecret = Setting::getSystem('META_APP_SECRET')['value'] ?? config('services.meta.app_secret');
-        $this->redirectUri = config('app.url') . '/api/meta/connect/callback';
+        // Get settings from database, fallback to config
+        $appIdSetting = Setting::getSystem('META_APP_ID');
+        $this->appId = is_string($appIdSetting) ? $appIdSetting : (is_array($appIdSetting) ? ($appIdSetting['value'] ?? null) : null);
+        $this->appId = $this->appId ?? config('services.meta.app_id');
+        
+        if (!$this->appId) {
+            throw new \Exception('META_APP_ID is not configured. Please add it to settings or .env file.');
+        }
+        
+        $appSecretSetting = Setting::getSystem('META_APP_SECRET');
+        $this->appSecret = is_string($appSecretSetting) ? $appSecretSetting : (is_array($appSecretSetting) ? ($appSecretSetting['value'] ?? null) : null);
+        $this->appSecret = $this->appSecret ?? config('services.meta.app_secret');
+        
+        if (!$this->appSecret) {
+            throw new \Exception('META_APP_SECRET is not configured. Please add it to settings or .env file.');
+        }
+        
+        // Ensure redirect URI is properly formatted
+        // Default to localhost:8000 for development
+        $baseUrl = config('app.url', 'http://localhost:8000');
+        // Remove trailing slash if present
+        $baseUrl = rtrim($baseUrl, '/');
+        // Ensure we have the correct port for local development
+        if (str_contains($baseUrl, 'localhost') && !str_contains($baseUrl, ':')) {
+            $baseUrl = 'http://localhost:8000';
+        }
+        $this->redirectUri = $baseUrl . '/api/meta/connect/callback';
+        
+        // Log redirect URI for debugging
+        \Log::info('Meta OAuth Service initialized', [
+            'app_id' => $this->appId,
+            'redirect_uri' => $this->redirectUri,
+        ]);
     }
 
-    public function getAuthorizationUrl(array $scopes = []): string
+    public function getAuthorizationUrl(array $scopes = [], ?string $state = null): string
     {
+        // For development mode, use minimal valid scopes
+        // These work without app review in development mode
+        // Note: App must be in Development mode (not Live) to test without review
         $defaultScopes = [
-            'pages_manage_posts',
-            'pages_manage_engagement',
-            'pages_read_engagement',
-            'pages_manage_metadata',
+            'pages_show_list',
+            'pages_manage_posts', 
             'pages_messaging',
-            'instagram_basic',
-            'instagram_manage_messages',
-            'whatsapp_business_messaging',
-            'whatsapp_business_management',
         ];
 
+        // Merge with any additional scopes passed in
         $scopes = array_merge($defaultScopes, $scopes);
+        $scopes = array_unique($scopes); // Remove duplicates
+        
+        // Filter out empty scopes
+        $scopes = array_filter($scopes);
 
-        $params = http_build_query([
+        // Build OAuth URL with properly encoded parameters
+        $params = [
             'client_id' => $this->appId,
             'redirect_uri' => $this->redirectUri,
             'scope' => implode(',', $scopes),
             'response_type' => 'code',
-            'state' => csrf_token(),
-        ]);
+        ];
+        
+        // Add state if provided (use csrf_token as fallback for security)
+        if ($state) {
+            $params['state'] = $state;
+        } else {
+            $params['state'] = csrf_token();
+        }
 
-        return "https://www.facebook.com/v18.0/dialog/oauth?{$params}";
+        // Use RFC 3986 encoding for proper URL encoding
+        $queryString = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
+
+        return "https://www.facebook.com/v18.0/dialog/oauth?{$queryString}";
     }
 
     public function exchangeCodeForToken(string $code): array

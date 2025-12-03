@@ -60,7 +60,7 @@ export default function Billing() {
       <div>
         <h2 className="text-2xl font-bold mb-4">Available Plans</h2>
         <div className="grid gap-6 md:grid-cols-3">
-          {plans.map((plan: any) => (
+          {(plans || []).map((plan: any) => (
             <Card key={plan.id} className={plan.id === subscription?.plan_id ? 'border-primary' : ''}>
               <CardHeader>
                 <CardTitle>{plan.name}</CardTitle>

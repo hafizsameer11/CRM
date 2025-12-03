@@ -107,8 +107,16 @@ class PublishScheduledPost implements ShouldQueue
             $mediaAsset = \App\Models\MediaAsset::find($mediaId);
             
             if ($mediaAsset) {
-                // Generate full public URL
-                $urls[] = url(Storage::url($mediaAsset->storage_path));
+                // Use the model's url attribute which handles URL generation
+                $relativeUrl = Storage::disk('public')->url($mediaAsset->storage_path);
+                
+                // Convert to absolute URL if it's relative
+                if (str_starts_with($relativeUrl, 'http')) {
+                    $urls[] = $relativeUrl;
+                } else {
+                    // Generate full absolute URL
+                    $urls[] = url($relativeUrl);
+                }
             }
         }
 

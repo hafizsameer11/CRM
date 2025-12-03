@@ -5,12 +5,15 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Facebook, Instagram, MessageCircle, Check, ArrowRight, Sparkles, MessageSquare, BarChart3, Calendar, Loader2 } from 'lucide-react'
 import { useUIStore } from '@/store/uiStore'
+import { useAuthStore } from '@/store/authStore'
 import api from '@/lib/api'
 import { isDemoMode, demoChannels } from '@/lib/demoData'
 
 export default function Onboarding() {
   const navigate = useNavigate()
   const addToast = useUIStore((state) => state.addToast)
+  const token = useAuthStore((state) => state.token)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const [step, setStep] = useState(1)
   const [connecting, setConnecting] = useState<string | null>(null)
 
@@ -68,17 +71,18 @@ export default function Onboarding() {
 
     setConnecting(type)
     try {
-      const token = localStorage.getItem('token')
-      if (!token) {
+      if (!isAuthenticated || !token) {
         addToast({
           title: 'Please login first',
+          description: 'You need to be logged in to connect accounts',
           variant: 'destructive',
         })
+        navigate('/login')
         return
       }
 
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
-      window.location.href = `${apiUrl}/meta/connect?token=${token}`
+      window.location.href = `${apiUrl}/meta/connect?token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}`
     } catch (error) {
       addToast({
         title: 'Connection failed',

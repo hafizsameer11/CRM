@@ -18,10 +18,25 @@ class Setting extends Model
     ];
 
     protected $casts = [
-        'value' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    // Accessor: Decode JSON value
+    public function getValueAttribute($value)
+    {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            return json_last_error() === JSON_ERROR_NONE ? $decoded : $value;
+        }
+        return $value;
+    }
+
+    // Mutator: Encode value to JSON
+    public function setValueAttribute($value)
+    {
+        $this->attributes['value'] = json_encode($value);
+    }
 
     public function tenant(): BelongsTo
     {
@@ -44,7 +59,12 @@ class Setting extends Model
             ->where('scope', 'system')
             ->first();
 
-        return $setting ? $setting->value : $default;
+        if (!$setting) {
+            return $default;
+        }
+
+        // Value is decoded from JSON via accessor
+        return $setting->value;
     }
 
     public static function setSystem(string $key, mixed $value): void

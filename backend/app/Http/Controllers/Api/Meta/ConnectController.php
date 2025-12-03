@@ -22,49 +22,89 @@ class ConnectController extends Controller
 
     public function redirectToProvider(Request $request): RedirectResponse
     {
-        // Get tenant ID from authenticated user or query token
-        $tenantId = $request->_tenant_id;
-        
-        // If token in query, validate it manually (for OAuth redirect flow)
-        if ($request->has('token') && !$tenantId) {
-            try {
-                /** @var \PHPOpenSourceSaver\JWTAuth\JWTGuard $guard */
-                $guard = auth('api');
-                $user = $guard->setToken($request->token)->user();
-                if ($user) {
-                    $tenantId = $user->tenant_id;
+        try {
+            // Get tenant ID from authenticated user or query token
+            $tenantId = $request->_tenant_id;
+            
+            // If token in query, validate it manually (for OAuth redirect flow)
+            if ($request->has('token') && !$tenantId) {
+                try {
+                    /** @var \PHPOpenSourceSaver\JWTAuth\JWTGuard $guard */
+                    $guard = auth('api');
+                    $user = $guard->setToken($request->token)->user();
+                    if ($user) {
+                        $tenantId = $user->tenant_id;
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('OAuth token validation failed', ['error' => $e->getMessage()]);
+                    return redirect(config('app.frontend_url', 'http://localhost:3000') . '/integrations?error=unauthorized');
                 }
-            } catch (\Exception $e) {
+            }
+            
+            if (!$tenantId) {
+                \Log::error('OAuth redirect failed: No tenant ID');
                 return redirect(config('app.frontend_url', 'http://localhost:3000') . '/integrations?error=unauthorized');
             }
+
+            // Store OAuth type and tenant ID - use encrypted state parameter instead of session
+            $type = $request->query('type', 'facebook'); // Default to facebook if not specified
+            
+            // Encode tenant_id and type in state parameter for OAuth
+            $state = base64_encode(json_encode([
+                'tenant_id' => $tenantId,
+                'type' => $type,
+                'timestamp' => time(),
+            ]));
+
+            $authUrl = $this->metaService->getAuthorizationUrl([], $state);
+            
+            \Log::info('OAuth redirect', ['tenant_id' => $tenantId, 'type' => $type, 'auth_url' => $authUrl]);
+
+            return redirect($authUrl);
+        } catch (\Exception $e) {
+            \Log::error('OAuth redirect error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return redirect(config('app.frontend_url', 'http://localhost:3000') . '/integrations?error=server_error');
         }
-        
-        if (!$tenantId) {
-            return redirect(config('app.frontend_url', 'http://localhost:3000') . '/integrations?error=unauthorized');
-        }
-
-        session(['meta_oauth_tenant_id' => $tenantId]);
-
-        $authUrl = $this->metaService->getAuthorizationUrl();
-
-        return redirect($authUrl);
     }
 
     public function handleCallback(Request $request): JsonResponse|RedirectResponse
     {
         if ($request->has('error')) {
-            return response()->json([
-                'error' => 'OAuth authorization failed',
-                'message' => $request->error_description,
-            ], 400);
+            return redirect(config('app.frontend_url', 'http://localhost:3000') . '/integrations?error=' . urlencode($request->error));
         }
 
         if (!$request->has('code')) {
-            return response()->json(['error' => 'Authorization code not provided'], 400);
+            return redirect(config('app.frontend_url', 'http://localhost:3000') . '/integrations?error=no_code');
         }
 
         try {
-            $tenantId = session('meta_oauth_tenant_id');
+            // Decode state parameter to get tenant_id and type
+            $state = $request->query('state');
+            $stateData = null;
+            $tenantId = null;
+            $type = 'facebook';
+            
+            if ($state) {
+                try {
+                    $stateData = json_decode(base64_decode($state), true);
+                    if ($stateData && isset($stateData['tenant_id'])) {
+                        $tenantId = $stateData['tenant_id'];
+                        $type = $stateData['type'] ?? 'facebook';
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('Failed to decode OAuth state', ['error' => $e->getMessage()]);
+                }
+            }
+            
+            // Fallback to session if state not available
+            if (!$tenantId) {
+                $tenantId = session('meta_oauth_tenant_id');
+                $type = session('meta_oauth_type', 'facebook');
+            }
+
+            if (!$tenantId) {
+                return redirect(config('app.frontend_url', 'http://localhost:3000') . '/integrations?error=unauthorized');
+            }
 
             // Exchange code for short-lived token
             $tokenData = $this->metaService->exchangeCodeForToken($request->code);
@@ -72,20 +112,12 @@ class ConnectController extends Controller
             // Get long-lived token
             $longLivedToken = $this->metaService->getLongLivedToken($tokenData['access_token']);
 
-            // Store in session for later use
-            session([
-                'meta_access_token' => $longLivedToken['access_token'],
-                'meta_token_expires_in' => $longLivedToken['expires_in'] ?? 5184000, // 60 days default
-            ]);
-
-            // Redirect to frontend with success
-            $frontendUrl = config('app.frontend_url') . '/settings/channels?oauth=success';
+            // Redirect to frontend integrations page with OAuth success
+            $frontendUrl = config('app.frontend_url', 'http://localhost:3000') . '/integrations?oauth=success&token=' . urlencode($longLivedToken['access_token']) . '&type=' . urlencode($type);
             return redirect($frontendUrl);
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Failed to complete OAuth flow',
-                'message' => $e->getMessage(),
-            ], 500);
+            \Log::error('OAuth callback error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return redirect(config('app.frontend_url', 'http://localhost:3000') . '/integrations?error=server_error');
         }
     }
 
@@ -210,7 +242,10 @@ class ConnectController extends Controller
 
     public function getPages(Request $request): JsonResponse
     {
-        $accessToken = session('meta_access_token') ?? $request->access_token;
+        // Accept token from query param, request body, or session
+        $accessToken = $request->query('access_token') 
+            ?? $request->input('access_token')
+            ?? session('meta_access_token');
 
         if (!$accessToken) {
             return response()->json(['error' => 'Access token not found'], 401);
@@ -218,11 +253,87 @@ class ConnectController extends Controller
 
         try {
             $pages = $this->metaService->getUserPages($accessToken);
+            
+            // For each page, check if it has an Instagram account
+            $pagesWithInstagram = [];
+            foreach ($pages as $page) {
+                $pageData = $page;
+                try {
+                    $instagramAccount = $this->metaService->getPageInstagramAccount($page['id'], $page['access_token']);
+                    $pageData['instagram_account'] = $instagramAccount;
+                } catch (\Exception $e) {
+                    $pageData['instagram_account'] = null;
+                }
+                $pagesWithInstagram[] = $pageData;
+            }
 
-            return response()->json(['pages' => $pages]);
+            return response()->json(['pages' => $pagesWithInstagram]);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Failed to fetch pages',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getInstagramAccounts(Request $request): JsonResponse
+    {
+        $accessToken = $request->query('access_token') 
+            ?? $request->input('access_token')
+            ?? session('meta_access_token');
+
+        if (!$accessToken) {
+            return response()->json(['error' => 'Access token not found'], 401);
+        }
+
+        try {
+            $pages = $this->metaService->getUserPages($accessToken);
+            $instagramAccounts = [];
+
+            foreach ($pages as $page) {
+                try {
+                    $instagramAccount = $this->metaService->getPageInstagramAccount($page['id'], $page['access_token']);
+                    if ($instagramAccount) {
+                        $instagramAccounts[] = [
+                            'instagram_account_id' => $instagramAccount['id'],
+                            'username' => $instagramAccount['username'] ?? 'Unknown',
+                            'page_id' => $page['id'],
+                            'page_name' => $page['name'],
+                            'access_token' => $page['access_token'],
+                        ];
+                    }
+                } catch (\Exception $e) {
+                    // Skip pages without Instagram accounts
+                    continue;
+                }
+            }
+
+            return response()->json(['instagram_accounts' => $instagramAccounts]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch Instagram accounts',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getWhatsAppAccounts(Request $request): JsonResponse
+    {
+        $accessToken = $request->query('access_token') 
+            ?? $request->input('access_token')
+            ?? session('meta_access_token');
+
+        if (!$accessToken) {
+            return response()->json(['error' => 'Access token not found'], 401);
+        }
+
+        try {
+            $businesses = $this->metaService->getWhatsAppBusinessAccounts($accessToken);
+            
+            return response()->json(['whatsapp_accounts' => $businesses]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch WhatsApp accounts',
                 'message' => $e->getMessage(),
             ], 500);
         }

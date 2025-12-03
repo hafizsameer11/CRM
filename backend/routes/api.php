@@ -165,9 +165,13 @@ Route::prefix('meta')->name('meta.')->group(function () {
     Route::get('/connect', [ConnectController::class, 'redirectToProvider'])->name('connect');
     Route::get('/connect/callback', [ConnectController::class, 'handleCallback'])->name('callback');
     
-    // Protected routes (require JWT)
+    // Routes that can accept access_token from query (for OAuth flow) or JWT
+    Route::get('/pages', [ConnectController::class, 'getPages'])->name('pages');
+    Route::get('/instagram-accounts', [ConnectController::class, 'getInstagramAccounts'])->name('instagram.accounts');
+    Route::get('/whatsapp-accounts', [ConnectController::class, 'getWhatsAppAccounts'])->name('whatsapp.accounts');
+    
+    // Protected routes (require JWT for attaching)
     Route::middleware(['auth:api', 'tenant.scope'])->group(function () {
-        Route::get('/pages', [ConnectController::class, 'getPages'])->name('pages');
         Route::post('/attach/facebook', [ConnectController::class, 'attachFacebookPage'])->name('attach.facebook');
         Route::post('/attach/instagram', [ConnectController::class, 'attachInstagramAccount'])->name('attach.instagram');
         Route::post('/attach/whatsapp', [ConnectController::class, 'attachWhatsAppNumber'])->name('attach.whatsapp');
