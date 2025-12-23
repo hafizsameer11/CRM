@@ -10,6 +10,7 @@
 # Docker
 docker-compose*.yml
 .dockerignore
+docker/
 
 # IDE
 .idea
@@ -20,3 +21,27 @@ _ide_helper.php
 # OS
 .DS_Store
 Thumbs.db
+
+# Backend specific
+backend/vendor
+backend/node_modules
+backend/storage/logs/*
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/.env
+backend/.env.*
+backend/phpunit.xml
+backend/tests
+
+# Frontend specific
+frontend/node_modules
+frontend/dist
+frontend/.env
+frontend/.env.*
+frontend/coverage
+
+# Scripts
+*.ps1
+*.sh
+!docker/start.sh
