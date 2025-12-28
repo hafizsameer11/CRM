@@ -5,6 +5,8 @@ import { Toaster } from '@/components/ui/toaster'
 import ProtectedRoute from '@/components/layout/ProtectedRoute'
 
 // Pages
+import Landing from '@/pages/Landing'
+import PrivacyPolicy from '@/pages/PrivacyPolicy'
 import Login from '@/pages/Login'
 import Register from '@/pages/Register'
 import Onboarding from '@/pages/Onboarding'
@@ -32,9 +34,13 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
+          {/* Public Pages */}
+          <Route path="/" element={<Landing />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           
+          {/* Protected Pages */}
           <Route element={<ProtectedRoute />}>
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -47,8 +53,6 @@ function App() {
             <Route path="/billing" element={<Billing />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
-
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
       

@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Intervention\Image\Facades\Image;
+// use Intervention\Image\Facades\Image; // Optional: Install intervention/image-laravel if you want advanced image processing
 
 class MediaController extends Controller
 {
@@ -70,15 +70,27 @@ class MediaController extends Controller
                 'storage_path' => $storagePath,
             ];
 
-            // Generate thumbnail for images
+            // Generate thumbnail and get dimensions for images
             if (str_starts_with($mimeType, 'image/')) {
-                $thumbnailPath = $this->generateThumbnail($storagePath);
-                $mediaData['thumbnail_path'] = $thumbnailPath;
+                $fullPath = Storage::disk('public')->path($storagePath);
+                
+                // Get image dimensions using GD library
+                $imageInfo = @getimagesize($fullPath);
+                if ($imageInfo) {
+                    $mediaData['width'] = $imageInfo[0];
+                    $mediaData['height'] = $imageInfo[1];
+                }
 
-                // Get image dimensions
-                $image = Image::make(Storage::disk('public')->path($storagePath));
-                $mediaData['width'] = $image->width();
-                $mediaData['height'] = $image->height();
+                // Generate thumbnail if GD is available
+                if (extension_loaded('gd')) {
+                    try {
+                        $thumbnailPath = $this->generateThumbnail($storagePath);
+                        $mediaData['thumbnail_path'] = $thumbnailPath;
+                    } catch (\Exception $e) {
+                        // Thumbnail generation failed, continue without thumbnail
+                        \Log::warning('Thumbnail generation failed', ['error' => $e->getMessage()]);
+                    }
+                }
             }
 
             $media = MediaAsset::create($mediaData);
@@ -136,10 +148,92 @@ class MediaController extends Controller
     protected function generateThumbnail(string $storagePath): string
     {
         $thumbnailPath = str_replace('.', '_thumb.', $storagePath);
+        $fullPath = Storage::disk('public')->path($storagePath);
+        $thumbFullPath = Storage::disk('public')->path($thumbnailPath);
 
-        $image = Image::make(Storage::disk('public')->path($storagePath));
-        $image->fit(300, 300);
-        $image->save(Storage::disk('public')->path($thumbnailPath));
+        // Ensure thumbnail directory exists
+        $thumbDir = dirname($thumbFullPath);
+        if (!is_dir($thumbDir)) {
+            mkdir($thumbDir, 0755, true);
+        }
+
+        // Get image info
+        $imageInfo = getimagesize($fullPath);
+        if (!$imageInfo) {
+            throw new \Exception('Could not get image dimensions');
+        }
+
+        $width = $imageInfo[0];
+        $height = $imageInfo[1];
+        $mime = $imageInfo['mime'];
+
+        // Calculate thumbnail dimensions (300x300, maintaining aspect ratio)
+        $thumbSize = 300;
+        $ratio = min($thumbSize / $width, $thumbSize / $height);
+        $thumbWidth = (int)($width * $ratio);
+        $thumbHeight = (int)($height * $ratio);
+
+        // Create source image based on MIME type
+        switch ($mime) {
+            case 'image/jpeg':
+                $source = imagecreatefromjpeg($fullPath);
+                break;
+            case 'image/png':
+                $source = imagecreatefrompng($fullPath);
+                break;
+            case 'image/gif':
+                $source = imagecreatefromgif($fullPath);
+                break;
+            case 'image/webp':
+                $source = imagecreatefromwebp($fullPath);
+                break;
+            default:
+                throw new \Exception('Unsupported image type: ' . $mime);
+        }
+
+        if (!$source) {
+            throw new \Exception('Could not create image from source');
+        }
+
+        // Create thumbnail
+        $thumbnail = imagecreatetruecolor($thumbWidth, $thumbHeight);
+
+        // Preserve transparency for PNG and GIF
+        if ($mime === 'image/png' || $mime === 'image/gif') {
+            imagealphablending($thumbnail, false);
+            imagesavealpha($thumbnail, true);
+            $transparent = imagecolorallocatealpha($thumbnail, 255, 255, 255, 127);
+            imagefilledrectangle($thumbnail, 0, 0, $thumbWidth, $thumbHeight, $transparent);
+        }
+
+        // Resize image
+        imagecopyresampled(
+            $thumbnail,
+            $source,
+            0, 0, 0, 0,
+            $thumbWidth, $thumbHeight,
+            $width, $height
+        );
+
+        // Save thumbnail based on original MIME type
+        switch ($mime) {
+            case 'image/jpeg':
+                imagejpeg($thumbnail, $thumbFullPath, 85);
+                break;
+            case 'image/png':
+                imagepng($thumbnail, $thumbFullPath, 6);
+                break;
+            case 'image/gif':
+                imagegif($thumbnail, $thumbFullPath);
+                break;
+            case 'image/webp':
+                imagewebp($thumbnail, $thumbFullPath, 85);
+                break;
+        }
+
+        // Clean up
+        imagedestroy($source);
+        imagedestroy($thumbnail);
 
         return $thumbnailPath;
     }

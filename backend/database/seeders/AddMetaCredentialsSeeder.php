@@ -13,10 +13,10 @@ class AddMetaCredentialsSeeder extends Seeder
     public function run(): void
     {
         // Add Meta App ID - store as string (will be JSON encoded automatically)
-        Setting::setSystem('META_APP_ID', '1168203998665117');
+        Setting::setSystem('META_APP_ID', '851090237886043');
         
         // Add Meta App Secret
-        Setting::setSystem('META_APP_SECRET', '2a3f23199da16736e39d5dbf3dbe5efc');
+        Setting::setSystem('META_APP_SECRET', '2e91c2844362b82180eb7ce0faefad08');
         
         // Generate and add verify token if not exists
         $verifyToken = Setting::getSystem('META_VERIFY_TOKEN');
@@ -26,8 +26,8 @@ class AddMetaCredentialsSeeder extends Seeder
         }
         
         $this->command->info('Meta credentials added successfully!');
-        $this->command->info('App ID: 1168203998665117');
-        $this->command->info('App Secret: 2a3f23199da16736e39d5dbf3dbe5efc');
+        $this->command->info('App ID: 851090237886043');
+        $this->command->info('App Secret: 2e91c2844362b82180eb7ce0faefad08');
     }
 }
 

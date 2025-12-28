@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
@@ -39,11 +39,13 @@ export default function Register() {
         return
       }
       try {
-        const response = await api.get('/tenant/billing/plans')
+        // Use public plans endpoint for registration
+        const response = await api.get('/plans')
         setPlans(response.data || [])
       } catch (error) {
         console.error('Failed to fetch plans:', error)
-        setPlans([])
+        // Fallback to demo plans if API fails
+        setPlans(demoPlans)
       }
     }
     fetchPlans()
@@ -337,27 +339,41 @@ export default function Register() {
                                 <ul className="space-y-3">
                                   <li className="flex items-center gap-2 text-sm">
                                     <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                                    <span>{plan.limits?.channels === -1 ? 'Unlimited' : plan.limits?.channels} Channels</span>
-                                  </li>
-                                  <li className="flex items-center gap-2 text-sm">
-                                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                                    <span>{plan.limits?.users === -1 ? 'Unlimited' : plan.limits?.users} Users</span>
+                                    <span>
+                                      {(plan.limits?.max_channels ?? plan.limits?.channels) === -1 
+                                        ? 'Unlimited' 
+                                        : (plan.limits?.max_channels ?? plan.limits?.channels ?? 'N/A')} Channels
+                                    </span>
                                   </li>
                                   <li className="flex items-center gap-2 text-sm">
                                     <Check className="h-4 w-4 text-primary flex-shrink-0" />
                                     <span>
-                                      {plan.limits?.messages_per_month === -1
-                                        ? 'Unlimited'
-                                        : `${plan.limits?.messages_per_month.toLocaleString()}`} Messages/mo
+                                      {(plan.limits?.max_users ?? plan.limits?.users) === -1 
+                                        ? 'Unlimited' 
+                                        : (plan.limits?.max_users ?? plan.limits?.users ?? 'N/A')} Users
                                     </span>
                                   </li>
-                                  {plan.limits?.posting_limits && (
+                                  <li className="flex items-center gap-2 text-sm">
+                                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                                    <span>
+                                      {(() => {
+                                        const messagesLimit = plan.limits?.max_messages_per_month ?? plan.limits?.messages_per_month;
+                                        return !messagesLimit || messagesLimit === -1
+                                          ? 'Unlimited'
+                                          : `${(messagesLimit || 0).toLocaleString()}`;
+                                      })()} Messages/mo
+                                    </span>
+                                  </li>
+                                  {(plan.limits?.posting_limits || plan.limits?.posts_per_month) && (
                                     <li className="flex items-center gap-2 text-sm">
                                       <Check className="h-4 w-4 text-primary flex-shrink-0" />
                                       <span>
-                                        {plan.limits.posting_limits === -1
-                                          ? 'Unlimited'
-                                          : `${plan.limits.posting_limits}`} Posts/mo
+                                        {(() => {
+                                          const postsLimit = plan.limits?.posting_limits ?? plan.limits?.posts_per_month;
+                                          return postsLimit === -1
+                                            ? 'Unlimited'
+                                            : `${postsLimit || 0}`;
+                                        })()} Posts/mo
                                       </span>
                                     </li>
                                   )}

@@ -55,6 +55,9 @@ Route::prefix('auth')->name('auth.')->group(function () {
     Route::post('/login', [LoginController::class, 'login'])->name('login');
 });
 
+// Public Plans Route (for registration)
+Route::get('/plans', [BillingController::class, 'plans'])->name('plans.public');
+
 // Protected Tenant Routes
 Route::middleware(['auth:api', 'tenant.active', 'tenant.scope', 'scrub.sensitive'])
     ->prefix('tenant')

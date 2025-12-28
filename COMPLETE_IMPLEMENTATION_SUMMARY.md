@@ -55,7 +55,7 @@ php artisan db:seed --class=AddMetaCredentialsSeeder
 
 ### Step 2: Configure Meta App
 1. Go to: https://developers.facebook.com/apps/
-2. Select app: **1168203998665117**
+2. Select app: **851090237886043**
 3. Set OAuth Redirect URI: `http://localhost:8000/api/meta/connect/callback`
 4. Request required permissions
 

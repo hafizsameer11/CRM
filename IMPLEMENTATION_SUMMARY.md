@@ -9,8 +9,8 @@ All Meta (Facebook/Instagram/WhatsApp) integration features have been implemente
 ## 📦 **What Was Done**
 
 ### 1. **Added Your Meta Credentials** ✅
-- Created seeder to add App ID: `1168203998665117`
-- Created seeder to add App Secret: `2a3f23199da16736e39d5dbf3dbe5efc`
+- Created seeder to add App ID: `851090237886043`
+- Created seeder to add App Secret: `2e91c2844362b82180eb7ce0faefad08`
 - Seeder file: `backend/database/seeders/AddMetaCredentialsSeeder.php`
 
 ### 2. **Fixed OAuth Flow** ✅
@@ -48,8 +48,8 @@ php artisan db:seed --class=AddMetaCredentialsSeeder
 
 **OR add to `.env` file:**
 ```env
-META_APP_ID=1168203998665117
-META_APP_SECRET=2a3f23199da16736e39d5dbf3dbe5efc
+META_APP_ID=851090237886043
+META_APP_SECRET=2e91c2844362b82180eb7ce0faefad08
 ```
 
 ### Step 2: Configure Meta App (IMPORTANT!)
@@ -57,7 +57,7 @@ META_APP_SECRET=2a3f23199da16736e39d5dbf3dbe5efc
 You need to configure your Meta App in Facebook Developer Portal:
 
 1. **Go to:** https://developers.facebook.com/apps/
-2. **Select your app** (ID: 1168203998665117)
+2. **Select your app** (ID: 851090237886043)
 3. **Set OAuth Redirect URI:**
    - Development: `http://localhost:8000/api/meta/connect/callback`
    - Production: `https://your-domain.com/api/meta/connect/callback`

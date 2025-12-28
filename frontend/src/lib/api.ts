@@ -25,8 +25,12 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      useAuthStore.getState().logout()
-      window.location.href = '/login'
+      // Don't redirect if we're on the register page (user is trying to sign up)
+      const currentPath = window.location.pathname
+      if (currentPath !== '/register') {
+        useAuthStore.getState().logout()
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }

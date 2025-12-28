@@ -50,13 +50,15 @@ class MetaOAuthService
 
     public function getAuthorizationUrl(array $scopes = [], ?string $state = null): string
     {
-        // For development mode, use minimal valid scopes
-        // These work without app review in development mode
-        // Note: App must be in Development mode (not Live) to test without review
+        // Development-friendly scopes that work without App Review
+        // These are basic permissions available in Development mode
+        // Note: Advanced permissions like pages_manage_posts require App Review for production
         $defaultScopes = [
-            'pages_show_list',
-            'pages_manage_posts', 
-            'pages_messaging',
+            'pages_show_list',        // List user's Facebook pages (works in dev mode)
+            'pages_read_engagement',  // Read page engagement (works in dev mode)
+            'pages_messaging',        // Send/receive messages (works in dev mode)
+            'public_profile',         // Basic profile info (always available)
+            'email',                  // User email (always available)
         ];
 
         // Merge with any additional scopes passed in

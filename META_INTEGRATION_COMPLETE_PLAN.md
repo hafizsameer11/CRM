@@ -12,8 +12,8 @@ This document outlines what was implemented to complete the Meta (Facebook/Insta
 
 **Created:** `backend/database/seeders/AddMetaCredentialsSeeder.php`
 
-- Adds Meta App ID: `1168203998665117`
-- Adds Meta App Secret: `2a3f23199da16736e39d5dbf3dbe5efc`
+- Adds Meta App ID: `851090237886043`
+- Adds Meta App Secret: `2e91c2844362b82180eb7ce0faefad08`
 - Generates verify token if not exists
 
 **To Run:**
@@ -101,8 +101,8 @@ php artisan db:seed --class=AddMetaCredentialsSeeder
 
 **Option B: Add to .env**
 ```env
-META_APP_ID=1168203998665117
-META_APP_SECRET=2a3f23199da16736e39d5dbf3dbe5efc
+META_APP_ID=851090237886043
+META_APP_SECRET=2e91c2844362b82180eb7ce0faefad08
 ```
 
 **Option C: Via Admin Panel**
