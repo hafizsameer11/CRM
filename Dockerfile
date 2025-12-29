@@ -92,7 +92,9 @@ RUN chown -R www-data:www-data /var/www/html \
 FROM backend-setup AS production
 
 # Copy nginx configuration
+# Alpine Linux uses /etc/nginx/http.d/ for nginx config
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
+RUN mkdir -p /etc/nginx/http.d || true
 
 # Copy supervisor configuration
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
