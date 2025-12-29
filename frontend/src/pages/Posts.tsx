@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, Calendar, Send, Edit, Trash2, Image as ImageIcon } from 'lucide-react'
+import { Plus, Calendar, Edit, Trash2, Image as ImageIcon } from 'lucide-react'
 import { formatDateTime } from '@/lib/utils'
 import PostEditor from '@/components/posts/PostEditor'
 import { toast } from '@/hooks/use-toast'

@@ -6,8 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Facebook, Instagram, MessageCircle, Check, ArrowRight, Sparkles, MessageSquare, BarChart3, Calendar, Loader2 } from 'lucide-react'
 import { useUIStore } from '@/store/uiStore'
 import { useAuthStore } from '@/store/authStore'
-import api from '@/lib/api'
-import { isDemoMode, demoChannels } from '@/lib/demoData'
+import { isDemoMode } from '@/lib/demoData'
 
 export default function Onboarding() {
   const navigate = useNavigate()

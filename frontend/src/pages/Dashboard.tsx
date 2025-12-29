@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { MessageSquare, Users, Plug, TrendingUp, ArrowUpRight, ArrowDownRight, Loader2 } from 'lucide-react'
+import { MessageSquare, Users, Plug, TrendingUp, Loader2 } from 'lucide-react'
 import api from '@/lib/api'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { motion } from 'framer-motion'
