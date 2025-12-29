@@ -1,0 +1,22 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+
+# Docker
+docker-compose*.yml
+.dockerignore
+
+# IDE
+.idea
+.vscode
+.phpstorm.meta.php
+_ide_helper.php
+
+# OS
+.DS_Store
+Thumbs.db

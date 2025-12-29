@@ -1,0 +1,52 @@
+version: '3.8'
+
+# Development docker-compose override
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  backend:
+    build:
+      target: development
+    volumes:
+      - ./backend:/var/www/html
+      - backend_storage:/var/www/html/storage
+      - backend_vendor:/var/www/html/vendor
+      - backend_node_modules:/var/www/html/node_modules
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - RUN_MIGRATIONS=true
+    command: php artisan serve --host=0.0.0.0 --port=8000
+
+  queue:
+    build:
+      target: development
+    volumes:
+      - ./backend:/var/www/html
+      - backend_storage:/var/www/html/storage
+      - backend_vendor:/var/www/html/vendor
+
+  horizon:
+    build:
+      target: development
+    volumes:
+      - ./backend:/var/www/html
+      - backend_storage:/var/www/html/storage
+      - backend_vendor:/var/www/html/vendor
+
+  frontend-dev:
+    build:
+      target: development
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+      - CHOKIDAR_USEPOLLING=true
+
+volumes:
+  backend_node_modules:
+    driver: local
+  frontend_node_modules:
+    driver: local
+

@@ -1,0 +1,63 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea
+.vscode
+.phpstorm.meta.php
+_ide_helper.php
+.phpunit.result.cache
+
+# Dependencies
+/vendor
+/node_modules
+
+# Environment
+.env
+.env.backup
+.env.production
+.env.local
+.env.*.local
+
+# Storage and logs
+/storage/*.key
+/storage/logs/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/app/*
+!/storage/app/.gitkeep
+!/storage/app/public/.gitkeep
+/storage/pail
+
+# Build artifacts
+/public/build
+/public/hot
+/public/storage
+/public/mix-manifest.json
+
+# Testing
+/phpunit.xml
+.phpunit.result.cache
+/tests
+/coverage
+
+# Documentation
+*.md
+!README.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+.docker/
+
+# Scripts
+start-server.ps1
+
