@@ -10,7 +10,7 @@
 # Docker
 docker-compose*.yml
 .dockerignore
-docker/
+# Note: docker/ folder is NEEDED - do not exclude it!
 
 # IDE
 .idea
